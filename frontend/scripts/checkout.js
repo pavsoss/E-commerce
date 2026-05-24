@@ -1,12 +1,15 @@
-// CHECKOUT PAGE INITIALIZED
-// Shared helpers are provided globally from utils.js
-const cart = getJSON("cart") || [];
+// checkout page initialized
+const cart = AppUtils.getCart();
 
-if(!Array.isArray(cart) || cart.length === 0){
-    notify("Your cart is empty!", "error");
+if (!Array.isArray(cart) || cart.length === 0) {
+    AppUtils.notify(
+        "Your cart is empty!",
+        "error"
+    );
     window.location.href = "cart.html";
 }
 
+// checkout page elements
 const elements = {
     checkoutItems:
         document.getElementById(
@@ -79,7 +82,7 @@ const elements = {
         )
 };
 
-// RENDER SUMMARY
+// render checkout summary
 function renderCheckout(){
     if (!elements.checkoutItems) return;
 
@@ -95,9 +98,11 @@ function renderCheckout(){
         div.classList.add("checkout-item");
         div.innerHTML = `
             <span>${item.name} (${item.qty || 1})</span>
-            <span>₹${(
-                price * (item.qty || 1)
-            ).toFixed(2)}</span>
+            <span>
+                ${AppUtils.formatPrice(
+                    price * (item.qty || 1)
+                )}
+            </span>
         `;
         elements.checkoutItems.appendChild(div);
     });
@@ -107,23 +112,23 @@ function renderCheckout(){
 
     if (elements.subtotal) {
         elements.subtotal.innerText =
-            `₹${subtotal.toFixed(2)}`;
+            AppUtils.formatPrice(subtotal);
     }
 
     if (elements.tax) {
         elements.tax.innerText =
-            `₹${tax.toFixed(2)}`;
+            AppUtils.formatPrice(tax);
     }
 
     if (elements.total) {
         elements.total.innerText =
-            `₹${total.toFixed(2)}`;
+            AppUtils.formatPrice(total);
     }
 }
 
 renderCheckout();
 
-// PAYMENT METHOD TOGGLE
+// payment method toggle
 elements.paymentMethods.forEach((method) => {
     method.addEventListener("change", () => {
         if (elements.cardDetails) {
@@ -135,107 +140,126 @@ elements.paymentMethods.forEach((method) => {
     });
 });
 
-// PLACE ORDER
+// place order
 if (elements.checkoutForm) {
-elements.checkoutForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    if(!Array.isArray(cart) || cart.length === 0){
-        notify("Your cart is empty!", "error");
-        return;
-    }
-
-    const selectedPayment =
-        document.querySelector(
-            'input[name="payment"]:checked'
-        );
-
-    if (!selectedPayment) {
-        notify(
-            "Select a payment method",
-            "error"
-        );
-        return;
-    }
-
-    if(
-        !elements.fullName.value.trim() ||
-        !elements.email.value.trim() ||
-        !elements.phone.value.trim()
-    ){
-        notify(
-            "Please fill all required customer details",
-            "error"
-        );
-        return;
-    }
-
-    const order = {
-        customer: {
-            name:
-                elements.fullName.value.trim(),
-
-            email:
-                elements.email.value.trim(),
-
-            phone:
-                elements.phone.value.trim()
-        },
-        address: {
-            city:
-                elements.city.value.trim(),
-
-            state:
-                elements.state.value.trim(),
-
-            zip:
-                elements.zip.value.trim(),
-
-            fullAddress:
-                elements.address.value.trim()
-        },
-        paymentMethod:
-            selectedPayment.value,
-        items: cart,
-        total: elements.total
-            ? parseFloat(
-                elements.total.innerText.replace(
-                    /[^\d\.]/g,
-                    ""
-                )
-              )
-            : 0
-    };
-
-    try {
-        const data = await apiRequest(
-            "/orders",
-            {
-                method: "POST",
-                body: JSON.stringify(order)
-            }
-        );
-        if(data.success){
-            notify(
-                "Order placed successfully! 🎉",
-                "success"
+    elements.checkoutForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+    
+        if(!Array.isArray(cart) || cart.length === 0){
+            AppUtils.notify(
+                "Your cart is empty!",
+                "error"
             );
-            setJSON("cart", []);
-            window.location.href = "order.html";
-        } else {
-            notify(
-                data.message ||
+            return;
+        }
+    
+        const selectedPayment =
+            document.querySelector(
+                'input[name="payment"]:checked'
+            );
+        
+        if (!selectedPayment) {
+            AppUtils.notify(
+                "Select a payment method",
+                "error"
+            );
+            return;
+        }
+    
+        if (
+            !elements.fullName.value.trim() ||
+            !elements.email.value.trim() ||
+            !elements.phone.value.trim()
+        ) {
+            AppUtils.notify(
+                "Please fill all required customer details",
+                "error"
+            );
+        
+            return;
+        }
+        
+        const phoneRegex = /^[6-9]\d{9}$/;
+        
+        if (
+            !phoneRegex.test(
+                elements.phone.value.trim()
+            )
+        ) {
+            AppUtils.notify(
+                "Enter a valid 10-digit phone number",
+                "error"
+            );
+        
+            return;
+        }
+    
+        const order = {
+            customer: {
+                name:
+                    elements.fullName.value.trim(),
+            
+                email:
+                    elements.email.value.trim(),
+            
+                phone:
+                    elements.phone.value.trim()
+            },
+            address: {
+                city:
+                    elements.city.value.trim(),
+            
+                state:
+                    elements.state.value.trim(),
+            
+                zip:
+                    elements.zip.value.trim(),
+            
+                fullAddress:
+                    elements.address.value.trim()
+            },
+            paymentMethod:
+                selectedPayment.value,
+            items: cart,
+            total: elements.total
+                ? parseFloat(
+                    elements.total.innerText.replace(
+                        /[^\d\.]/g,
+                        ""
+                    )
+                  )
+                : 0
+        };
+    
+        try {
+            const data = await AppUtils.apiRequest(
+                "/orders",
+                {
+                    method: "POST",
+                    body: JSON.stringify(order)
+                }
+            );
+            if(data.success){
+                AppUtils.notify(
+                    "Order placed successfully! 🎉",
+                    "success"
+                );
+                AppUtils.saveCart([]);
+                window.location.href = "order.html";
+            } else {
+                AppUtils.notify(
+                    data.message ||
+                    "Failed to place order",
+                    "error"
+                );
+            }
+        
+        } catch(error){
+            console.error(error);
+            AppUtils.notify(
                 "Failed to place order",
                 "error"
             );
         }
-
-    } catch(error){
-        console.error(error);
-        notify(
-            "Failed to place order",
-            "error"
-        );
-    }
-});
+    });
 }

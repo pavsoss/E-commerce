@@ -1,215 +1,451 @@
-const db = require("../config/db");
+const db =
+    require("../config/db");
 
-// Create order
-const createOrder = (req, res) => {
-    const { customer, address, paymentMethod, items, total } = req.body;
-        if (
-            !customer ||
-            !customer.name ||
-            !customer.email ||
-            !address ||
-            !address.fullAddress ||
-            !items ||
-            items.length === 0
-        ) {
-            return res.status(400).json({
-                success: false,
-                message:
-                    "Invalid order data"
-            });
-        }
-        if (
-            isNaN(total) ||
-            total <= 0
-        ) {
-            return res.status(400).json({
-                success: false,
-                message:
-                    "Invalid order total"
-            });    
-        }
-    const query = `
-        INSERT INTO orders (
-            user_id,
-            customer_name,
-            customer_email,
-            customer_phone,
-            city,
-            state,
-            zip,
-            full_address,
-            payment_method,
-            total
-        )
-        VALUES (?,?,?,?,?,?,?,?,?,?)
-    `;
+const {
+    createOrderService
+} = require(
+    "../services/order.service"
+);
 
-    db.query(
-        query,
-        [
-            req.user.id,
-            customer.name,
-            customer.email,
-            customer.phone,
-            address.city,
-            address.state,
-            address.zip,
-            address.fullAddress,
-            paymentMethod,
-            total
-        ],
-        (err, result) => {
-        if (err) {
-            console.error(err);
+// helper utilities
+const safeNumber = (value) => {
+    const parsed =
+        parseFloat(value);
 
-            return res.status(500).json({
-                success: false,
-                message: "Server error"
-            });
-        }
-        const orderId = result.insertId;
-        // Insert order items and update stock
-        items.forEach(item => {
-            const itemQuery = `INSERT INTO order_items (order_id, product_id, name, price, qty, color, size) VALUES (?,?,?,?,?,?,?)`;
-            db.query(itemQuery, [orderId, item.id || null, item.name, item.price, item.qty, item.color || null, item.size || null], (err2) => {
-                if (err2) console.error("Error inserting order item:", err2);
-            });
-            if (item.id) {
-                const stockQuery = `
-                    UPDATE products
-                    SET stock = stock - ?
-                    WHERE id = ? AND stock >= ?
-                `;
-                db.query(stockQuery, [item.qty, item.id, item.qty], (err3, result3) => {
-                    if (err3) {
-                        console.error(
-                            "Error updating stock for product ID",
-                            item.id,
-                            ":",
-                            err3
-                        );
-                    }
-                    if (result3 && result3.affectedRows === 0) {
-                        console.warn(`Insufficient stock for product ID ${item.id}`);
-                    }
-                });
+    return isNaN(parsed)
+        ? 0
+        : parsed;
+};
+
+const safeInteger = (value) => {
+    const parsed =
+        parseInt(value);
+
+    return isNaN(parsed)
+        ? 0
+        : parsed;
+};
+
+const sanitizeString =
+    (value) => {
+        return String(
+            value || ""
+        ).trim();
+    };
+
+// create order
+const createOrder =
+    async (
+        req,
+        res
+    ) => {
+        try {
+            const {
+                customer,
+                address,
+                paymentMethod,
+                items,
+                total
+            } = req.body;
+
+            // validation
+            if (
+                !customer
+                ||
+                !customer.name
+                ||
+                !customer.email
+            ) {
+                return res.status(400)
+                    .json({
+                        success: false,
+                        message:
+                            "Customer information required"
+                    });
             }
-        });
-        res.status(201).json({
-            success: true,
-            message: "Order placed successfully",
-            orderId
-        });
-    });
-};
 
-// Get all orders
-const getAllOrders = (req, res) => {
-    const query = `SELECT * FROM orders ORDER BY id DESC`;
-    db.query(query, (err, results) => {
-        if (err) {
-            console.error(err);
-            return res.status(500).json({
-                success: false,
-                message: "Server error"
-            });
-        }
-        res.status(200).json({
-            success: true,
-            orders: results
-        });
-    });
-};
+            if (
+                !address
+                ||
+                !address.fullAddress
+            ) {
+                return res.status(400)
+                    .json({
+                        success: false,
+                        message:
+                            "Delivery address required"
+                    });
+            }
 
-// Get logged-in user orders
-const getUserOrders = (req, res) => {
-    const query = `
-        SELECT *
-        FROM orders
-        WHERE user_id = ?
-        ORDER BY id DESC
-    `;
+            if (
+                !Array.isArray(
+                    items
+                )
+                ||
+                !items.length
+            ) {
+                return res.status(400)
+                    .json({
+                        success: false,
+                        message:
+                            "Order items required"
+                    });
+            }
 
-    db.query(query, [req.user.id], (err, results) => {
-        if (err) {
-            console.error(err);
+            if (
+                safeNumber(total) <= 0
+            ) {
+                return res.status(400)
+                    .json({
+                        success: false,
+                        message:
+                            "Invalid order total"
+                    });
+            }
 
-            return res.status(500).json({
-                success: false,
-                message: "Server error"
-            });
-        }
-
-        res.status(200).json({
-            success: true,
-            orders: results
-        });
-    });
-};
-
-// Get order by ID
-const getOrderById = (req, res) => {
-    const { id } = req.params;
-    const query = `SELECT * FROM orders WHERE id = ?`;
-    db.query(query, [id], (err, results) => {
-        if (err) {
-            console.error(err);
-
-            return res.status(500).json({
-                success: false,
-                message: "Server error"
-            });
-        }
-        if (results.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: "Order not found"
-            });
-        }
-        res.status(200).json({
-            success: true,
-            order: results[0]
-        });
-    });
-};
-
-// Update order status
-const updateOrderStatus = (req, res) => {
-    const { id } = req.params;
-    const { status } = req.body;
-        const validStatuses =
-            [
-                "pending",
-                "processing",
-                "shipped",
-                "delivered",
-                "cancelled"
+            const validPaymentMethods = [
+                "cod",
+                "card",
+                "upi",
+                "paypal"
             ];
+
+            if (
+                !validPaymentMethods.includes(
+                    sanitizeString(
+                        paymentMethod
+                    ).toLowerCase()
+                )
+            ) {
+
+                return res.status(400)
+                    .json({
+                        success: false,
+                        message:
+                            "Invalid payment method"
+                    });
+            }
+
+            // create order via service
+            const result =
+                await createOrderService({
+                    user_id:
+                        req.user.id,
+
+                    customer_name:
+                        sanitizeString(
+                            customer.name
+                        ),
+
+                    customer_email:
+                        sanitizeString(
+                            customer.email
+                        ),
+
+                    customer_phone:
+                        sanitizeString(
+                            customer.phone
+                        ),
+
+                    city:
+                        sanitizeString(
+                            address.city
+                        ),
+
+                    state:
+                        sanitizeString(
+                            address.state
+                        ),
+
+                    zip:
+                        sanitizeString(
+                            address.zip
+                        ),
+
+                    full_address:
+                        sanitizeString(
+                            address.fullAddress
+                        ),
+
+                    payment_method:
+                        sanitizeString(
+                            paymentMethod
+                        ).toLowerCase(),
+
+                    total:
+                        safeNumber(
+                            total
+                        ),
+                    items
+                });
+
+            return res.status(201)
+                .json({
+                    success: true,
+                    message:
+                        "Order placed successfully",
+                    orderId:
+                        result.orderId
+                });
+
+        } catch (error) {
+            console.error(
+                "CREATE ORDER ERROR:",
+                error
+            );
+
+            return res.status(500)
+                .json({
+                    success: false,
+                    message:
+                        error.message
+                        || "Failed to create order"
+                });
+        }
+    };
+
+// get all orders
+const getAllOrders =
+    (req, res) => {
+        const query = `
+            SELECT
+                id,
+                user_id,
+                customer_name,
+                customer_email,
+                payment_method,
+                total,
+                status,
+                created_at
+            FROM orders
+            ORDER BY id DESC
+        `;
+
+        db.query(
+            query,
+            (
+                err,
+                results
+            ) => {
+                if (err) {
+                    console.error(err);
+                    return res.status(500)
+                        .json({
+                            success: false,
+                            message:
+                                "Server error"
+                        });
+                }
+
+                res.status(200)
+                    .json({
+                        success: true,
+                        orders:
+                            Array.isArray(results)
+                                ? results
+                                : []
+                    });
+            }
+        );
+    };
+
+// get user orders
+const getUserOrders =
+    (req, res) => {
+        const query = `
+            SELECT
+                id,
+                customer_name,
+                payment_method,
+                total,
+                status,
+                created_at
+            FROM orders
+            WHERE user_id = ?
+            ORDER BY id DESC
+        `;
+
+        db.query(
+            query,
+            [req.user.id],
+            (
+                err,
+                results
+            ) => {
+                if (err) {
+                    console.error(err);
+                    return res.status(500)
+                        .json({
+                            success: false,
+                            message:
+                                "Server error"
+                        });
+                }
+
+                res.status(200)
+                    .json({
+                        success: true,
+                        orders:
+                            Array.isArray(results)
+                                ? results
+                                : []
+                    });
+            }
+        );
+    };
+
+// get order by id
+const getOrderById =
+    (req, res) => {
+        const id =
+            safeInteger(
+                req.params.id
+            );
+
+        if (!id) {
+            return res.status(400)
+                .json({
+                    success: false,
+                    message:
+                        "Invalid order ID"
+                });
+        }
+
+        const query = `
+            SELECT *
+            FROM orders
+            WHERE id = ?
+        `;
+
+        db.query(
+            query,
+            [id],
+            (
+                err,
+                results
+            ) => {
+                if (err) {
+                    console.error(err);
+                    return res.status(500)
+                        .json({
+                            success: false,
+                            message:
+                                "Server error"
+                        });
+                }
+
+                if (
+                    !Array.isArray(results)
+                    || !results.length
+                ) {
+                    return res.status(404)
+                        .json({
+                            success: false,
+                            message:
+                                "Order not found"
+                        });
+                }
+
+                res.status(200)
+                    .json({
+                        success: true,
+                        order:
+                            results[0]
+                    });
+            }
+        );
+    };
+
+// update order status
+const updateOrderStatus =
+    (req, res) => {
+        const id =
+            safeInteger(
+                req.params.id
+            );
+
+        const status =
+            sanitizeString(
+                req.body.status
+            ).toLowerCase();
+
+        const validStatuses = [
+            "pending",
+            "processing",
+            "shipped",
+            "delivered",
+            "cancelled"
+        ];
+
+        if (!id) {
+            return res.status(400)
+                .json({
+                    success: false,
+                    message:
+                        "Invalid order ID"
+                });
+        }
+
         if (
-            !status ||
-            !validStatuses.includes(status)
+            !validStatuses.includes(
+                status
+            )
         ) {
-            return res.status(400).json({
-                success: false,
-                message:
-                    "Invalid order status"
-            });    
+            return res.status(400)
+                .json({
+                    success: false,
+                    message:
+                        "Invalid order status"
+                });
         }
-    const query = `UPDATE orders SET status = ? WHERE id = ?`;
-    db.query(query, [status, id], (err) => {
-        if (err) {
-            console.error(err);
-            return res.status(500).json({
-                success: false,
-                message: "Server error"
-            });
-        }
-        res.status(200).json({
-            success: true,
-            message: "Order status updated"
-        });
-    });
-};
+
+        const query = `
+            UPDATE orders
+            SET status = ?
+            WHERE id = ?
+        `;
+
+        db.query(
+            query,
+            [
+                status,
+                id
+            ],
+            (
+                err,
+                result
+            ) => {
+                if (err) {
+                    console.error(err);
+                    return res.status(500)
+                        .json({
+                            success: false,
+                            message:
+                                "Server error"
+                        });
+                }
+
+                if (
+                    !result
+                    || result.affectedRows === 0
+                ) {
+                    return res.status(404)
+                        .json({
+                            success: false,
+                            message:
+                                "Order not found"
+                        });
+                }
+
+                res.status(200)
+                    .json({
+                        success: true,
+                        message:
+                            "Order status updated"
+                    });
+            }
+        );
+    };
 
 module.exports = {
     createOrder,

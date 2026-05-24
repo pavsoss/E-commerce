@@ -3,72 +3,197 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const rateLimit = require("express-rate-limit");
 
-// CONFIG
+// config
 dotenv.config();
 
-// DATABASE
-const db = require("./config/db");
+// database
+require("./config/db");
 
-// APP
+// app
 const app = express();
 
-// MIDDLEWARE
-app.use(cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"]
-}));
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true }));
-const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 20,
-    message: {
-        success: false,
-        message: "Too many requests. Please try again later."
-    }
+// constants
+const PORT =
+    process.env.PORT || 5000;
+
+const FRONTEND_URL =
+    process.env.FRONTEND_URL
+    || "http://localhost:3000";
+
+// security middleware
+app.disable("x-powered-by");
+
+// cors configuration
+app.use(
+    cors({
+        origin: FRONTEND_URL,
+        methods: [
+            "GET",
+            "POST",
+            "PUT",
+            "DELETE"
+        ],
+        allowedHeaders: [
+            "Content-Type",
+            "Authorization"
+        ],
+        credentials: true
+    })
+);
+
+// body parsers
+app.use(
+    express.json({
+        limit: "10mb"
+    })
+);
+
+app.use(
+    express.urlencoded({
+        extended: true,
+        limit: "10mb"
+    })
+);
+
+// rate limiter
+const authLimiter =
+    rateLimit({
+        windowMs:
+            15 * 60 * 1000,
+        max: 20,
+        standardHeaders: true,
+        legacyHeaders: false,
+        message: {
+            success: false,
+            message:
+                "Too many requests. Please try again later."
+        }
+    });
+
+// auth routes limiter
+app.use(
+    "/api/auth/login",
+    authLimiter
+);
+
+app.use(
+    "/api/auth/signup",
+    authLimiter
+);
+
+// request logger
+app.use((req, res, next) => {
+
+    console.log(
+        `${req.method} ${req.originalUrl}`
+    );
+
+    next();
 });
 
-app.use("/api/auth/login", authLimiter);
-app.use("/api/auth/signup", authLimiter);
+// routes
+const productRoutes =
+    require("./routes/productRoutes");
 
-// ROUTES
-const productRoutes = require("./routes/productRoutes");
-const authRoutes = require("./routes/authRoutes");
-const orderRoutes = require("./routes/orderRoutes");
+const authRoutes =
+    require("./routes/authRoutes");
 
-// API ROUTES
-app.use("/api/products", productRoutes);
-app.use("/api/auth", authRoutes);
-app.use("/api/orders", orderRoutes);
+const orderRoutes =
+    require("./routes/orderRoutes");
 
-// HOME ROUTE
+// api routes
+app.use(
+    "/api/products",
+    productRoutes
+);
+
+app.use(
+    "/api/auth",
+    authRoutes
+);
+
+app.use(
+    "/api/orders",
+    orderRoutes
+);
+
+// health check route
+app.get("/health", (req, res) => {
+
+    res.status(200).json({
+        success: true,
+        message: "Server is healthy"
+    });
+});
+
+// home route
 app.get("/", (req, res) => {
-    res.send("E-Commerce Backend Running 🚀");
+
+    res.status(200).json({
+        success: true,
+        message:
+            "E-Commerce Backend Running 🚀"
+    });
 });
 
-// 404 HANDLER
+// 404 handler
 app.use((req, res) => {
+
     res.status(404).json({
         success: false,
         message: "Route not found"
     });
 });
 
-// GLOBAL ERROR HANDLER
-app.use((err, req, res, next) => {
-    console.error(err);
+// global error handler
+app.use((
+    err,
+    req,
+    res,
+    next
+) => {
+    console.error(
+        "Server Error:",
+        err
+    );
 
-    res.status(500).json({
+    if (res.headersSent) {
+        return next(err);
+    }
+
+    res.status(
+        err.status || 500
+    ).json({
         success: false,
-        message: "Internal server error"
+        message:
+            err.message
+            || "Internal server error"
     });
 });
 
-// SERVER START
-const PORT = process.env.PORT || 5000;
+// graceful shutdown
+process.on(
+    "SIGINT",
+    () => {
+        console.log(
+            "\nShutting down server..."
+        );
+        process.exit(0);
+    }
+);
 
+// server start
 app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-    console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
+    console.log(
+        `Server running on http://localhost:${PORT}`
+    );
+    console.log(
+        `Environment: ${
+            process.env.NODE_ENV
+            || "development"
+        }`
+    );
+    console.log(
+        `Frontend URL: ${FRONTEND_URL}`
+    );
 });

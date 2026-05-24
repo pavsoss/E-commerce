@@ -1,3 +1,4 @@
+// auth page elements
 const elements = {
     signupForm: document.getElementById("signup-form"),
     signinForm: document.getElementById("signin-form"),
@@ -21,33 +22,27 @@ const passwordRegex =
     /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
 
 // BACKEND AUTH FUNCTIONS
+// signup user
 const signupUser = async (name, email, password) => {
-    const res = await fetch(`${API_BASE}/auth/signup`, {
+    return await AppUtils.apiRequest("/auth/signup", {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
         body: JSON.stringify({
             name,
             email,
             password
         })
     });
-    return await res.json();
 };
 
+// login user
 const loginUser = async (email, password) => {
-    const res = await fetch(`${API_BASE}/auth/login`, {
+    return await AppUtils.apiRequest("/auth/login", {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
         body: JSON.stringify({
             email,
             password
         })
     });
-    return await res.json();
 };
 
 function toggleFormLoading(button, isLoading, loadingText = "Please wait...") {
@@ -63,26 +58,12 @@ function toggleFormLoading(button, isLoading, loadingText = "Please wait...") {
     }
 }
 
-const clearAuthData = () => {
-    localStorage.removeItem(
-        "token"
-    );
+// clear auth/session data
+const clearAuthSession = () => {
+    AppUtils.clearAuthData();
 
-    localStorage.removeItem(
-        "refreshToken"
-    );
-
-    localStorage.removeItem(
-        "user"
-    );
-
-    localStorage.removeItem(
-        "cart"
-    );
-
-    localStorage.removeItem(
-        "wishlist"
-    );
+    localStorage.removeItem("cart");
+    localStorage.removeItem("wishlist");
 };
 
 // EMAIL SIGNUP
@@ -98,17 +79,17 @@ if(elements.signupForm){
         const email = elements.signupEmail.value.trim();
         const password = elements.signupPassword.value;
         if (!name) {
-            notify("Name is required", "error");
+            AppUtils.notify("Name is required", "error");
             return;
         }
 
         if (!emailRegex.test(email)) {
-            notify("Enter a valid email", "error");
+            AppUtils.notify("Enter a valid email", "error");
             return;
         }
 
         if (!passwordRegex.test(password)) {
-            notify(
+            AppUtils.notify(
                 "Password must contain uppercase, lowercase, number and 8 characters",
                 "error"
             );
@@ -119,14 +100,17 @@ if(elements.signupForm){
         try {
             const response = await signupUser(name, email, password);
             if(response.success){
-                notify("Account Created Successfully!", "success");
+                AppUtils.notify(
+                    "Account Created Successfully!",
+                    "success"
+                );
                 window.location.href = "signin.html";
             } else {
-                notify(response.message, "error");
+                AppUtils.notify(response.message, "error");
             }
         } catch(error){
             console.error(error);
-            notify("Signup failed. Please try again.", "error");
+            AppUtils.notify("Signup failed. Please try again.", "error");
         } finally {
             toggleFormLoading(submitBtn, false);
         }
@@ -145,14 +129,14 @@ if(elements.signinForm){
         const email = elements.signinEmail.value.trim();
         const password = elements.signinPassword.value.trim();
         if (!emailRegex.test(email)) {
-            notify(
+            AppUtils.notify(
                 "Enter a valid email",
                 "error"
             );
             return;
         }
         if (!password) {
-            notify(
+            AppUtils.notify(
                 "Password is required",
                 "error"
             );
@@ -166,28 +150,29 @@ if(elements.signinForm){
             if(response.success){
                 // Store auth data
                 localStorage.setItem("token", response.accessToken);
-                localStorage.setItem("refreshToken", response.refreshToken);
-                setJSON("user", response.user);
+                localStorage.setItem(
+                    "refreshToken",
+                    response.refreshToken
+                );
+                AppUtils.setJSON("user", response.user);
 
-                notify("Login Successful!", "success");
+                AppUtils.notify("Login Successful!", "success");
 
                 window.location.href = "index.html";
             } else {
-                notify(response.message, "error");
+                AppUtils.notify(response.message, "error");
             }
         } catch(error){
             console.error(error);
-            notify("Login failed. Please try again.", "error");
+            AppUtils.notify("Login failed. Please try again.", "error");
         } finally {
             toggleFormLoading(submitBtn, false);
         }
     });
 }
 
-// AUTH NAVBAR PROFILE SYSTEM (JWT)
-const token =
-    getJSON("token") ||
-    localStorage.getItem("token");
+// current auth token
+const token = AppUtils.getToken();
 
 if(elements.authLink){
     if(token){
@@ -206,11 +191,11 @@ if(elements.authLink){
         // Logout
         if(elements.logoutBtn){
             elements.logoutBtn.addEventListener("click", () => {
-                clearAuthData();
+                clearAuthSession();
                 if(elements.dropdown){
                     elements.dropdown.classList.remove("active");
                 }
-                notify("Logged out successfully", "success");
+                AppUtils.notify("Logged out successfully", "success");
                 setTimeout(() => {
                     window.location.href = "index.html";
                 }, 800);

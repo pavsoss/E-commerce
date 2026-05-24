@@ -1,5 +1,7 @@
-let cart = JSON.parse(localStorage.getItem("cart")) || [];
+// cart state
+let cart = AppUtils.getCart();
 
+// cart page elements
 const elements = {
     cartContainer: document.getElementById("cart-items"),
     subtotalElement: document.getElementById("subtotal"),
@@ -10,11 +12,10 @@ const elements = {
     buyNowBtn: document.getElementById("buy-now-btn")
 };
 
-// RENDER CART (Backend Integration)
+// render cart
 async function renderCart() {
     if (!elements.cartContainer) return;
     elements.cartContainer.innerHTML = "";
-
     if(cart.length === 0) {
         elements.cartContainer.innerHTML = `
             <div class="empty-cart">
@@ -23,7 +24,6 @@ async function renderCart() {
                 <a href="shop.html" class="continue-shopping-btn">Continue Shopping</a>
             </div>
         `;
-
         elements.subtotalElement.innerText = "₹0";
         elements.taxElement.innerText = "₹0";
         elements.totalElement.innerText = "₹0";
@@ -31,20 +31,17 @@ async function renderCart() {
     }
 
     let subtotal = 0;
-
     cart.forEach((item, index) => {
         const price =
             parseFloat(item.price) || 0;
         subtotal += price * item.qty;
-
         const cartItem = document.createElement("div");
         cartItem.classList.add("cart-item");
-
         cartItem.innerHTML = `
             <img src="${item.img}" alt="${item.name}">
             <div class="cart-item-info">
                 <h3>${item.name}</h3>
-                <p>Price: ₹${price}</p>
+                <p>Price: ${AppUtils.formatPrice(price)}</p>
                 <div class="cart-qty-controls">
                     <button data-index="${index}" class="decrease-qty">-</button>
                     <span>${item.qty}</span>
@@ -58,25 +55,21 @@ async function renderCart() {
         moveBtn.innerText = "Move to Wishlist";
         moveBtn.dataset.index = index;
         moveBtn.addEventListener("click", () => {
-            const wishlist = JSON.parse(localStorage.getItem("wishlist")) || [];
+            const wishlist = AppUtils.getWishlist();
             const exists = wishlist.find(
                 item =>
                     item.id === cart[index].id &&
                     item.color === cart[index].color &&
                     item.size === cart[index].size
             );
-
             if(!exists){
                 wishlist.push(cart[index]);
             }
-
-            localStorage.setItem("wishlist", JSON.stringify(wishlist));
-
+            AppUtils.saveWishlist(wishlist);
             cart.splice(index, 1);
             saveCart();
             renderCart();
-
-            notify("Moved to wishlist ❤️", "success");
+            AppUtils.notify("Moved to wishlist ❤️", "success");
         });
         cartItem.querySelector(".cart-item-info").appendChild(moveBtn);
         elements.cartContainer.appendChild(cartItem);
@@ -88,11 +81,12 @@ async function renderCart() {
     if(subtotal < 999 && subtotal > 0){
         shippingCost = 49; // flat shipping fee below ₹999
     }
-    localStorage.setItem("shippingCost", shippingCost);
+    AppUtils.setJSON("shippingCost", shippingCost);
     const total = subtotal + tax + shippingCost;
 
     if(elements.subtotalElement){
-        elements.subtotalElement.innerText = `₹${subtotal}`;
+        elements.subtotalElement.innerText =
+            `₹${subtotal.toFixed(2)}`;
     }
     if(elements.taxElement){
         elements.taxElement.innerText = `₹${tax.toFixed(2)}`;
@@ -106,11 +100,10 @@ async function renderCart() {
         elements.totalElement.innerText =
             `₹${total.toFixed(2)}`;
     }
-
     attachCartEventListeners();
 }
 
-// CART EVENT LISTENERS
+// cart event listeners
 function attachCartEventListeners() {
     document.querySelectorAll(".increase-qty").forEach(btn => {
         btn.addEventListener("click", (e) => {
@@ -147,7 +140,7 @@ function attachCartEventListeners() {
     });
 }
 
-// ADD TO CART FROM PRODUCT CARD / PRODUCT PAGE
+// add to cart from product/product page
 async function addToCartFromProduct(product) {
     const item = {
         id: product.id,
@@ -159,32 +152,26 @@ async function addToCartFromProduct(product) {
         qty: product.qty || 1
     };
 
-    // STANDARDIZED CART DUPLICATE CHECK
+    // standardized cart duplicate check
     const existingIndex = cart.findIndex(p => p.id === item.id && p.color === item.color && p.size === item.size);
     if(existingIndex >= 0){
         cart[existingIndex].qty += item.qty;
     } else {
         cart.push(item);
     }
-
     saveCart();
-    notify("Added to cart 🛍️", "success");
+    AppUtils.notify("Added to cart 🛍️", "success");
 
-    // Optional: POST to backend for logged-in users
-    const token = localStorage.getItem("token");
+    // sync cart to backend for logged-in users
+    const token = AppUtils.getToken();
     if(token){
         try{
-            const res = await fetch(`${API_BASE}/cart/add`, {
+            const data = await AppUtils.apiRequest("/cart/add", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`
-                },
                 body: JSON.stringify(item)
             });
-            const data = await res.json();
-            if(data.message === "Token expired"){
-                await refreshTokenAndRetry(() => addToCartFromProduct(product));
+            if(!data.success){
+                console.warn("Backend cart sync failed");
             }
         } catch(err){
             console.error("Error adding item to backend cart:", err);
@@ -197,30 +184,9 @@ async function addToCartFromProduct(product) {
     }
 }
 
-// SAVE CART
-function saveCart(){
-    localStorage.setItem("cart", JSON.stringify(cart));
-}
-
-// REFRESH TOKEN HELPER
-async function refreshTokenAndRetry(callback){
-    const refreshToken = localStorage.getItem("refreshToken");
-    if(!refreshToken) return;
-
-    try {
-        const res = await fetch(`${API_BASE}/auth/refresh-token`, {
-            method:"POST",
-            headers:{"Content-Type":"application/json"},
-            body: JSON.stringify({refreshToken})
-        });
-        const data = await res.json();
-        if(data.accessToken){
-            localStorage.setItem("token", data.accessToken);
-            await callback(); // retry original request
-        }
-    } catch(err){
-        console.error("Error refreshing token:", err);
-    }
+// save cart
+function saveCart() {
+    AppUtils.saveCart(cart);
 }
 
 // INITIALIZATION

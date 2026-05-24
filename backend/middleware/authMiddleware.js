@@ -1,60 +1,121 @@
-// backend/middleware/authMiddleware.js
-const jwt = require("jsonwebtoken");
+const jwt =
+    require("jsonwebtoken");
 
+// environment validation
 if (!process.env.JWT_SECRET) {
-    throw new Error("JWT_SECRET environment variable is not set");
+    throw new Error(
+        "JWT_SECRET environment variable is not set"
+    );
 }
 
-const authMiddleware = (req, res, next) => {
-    try {
-        const authHeader =
-            req.headers.authorization;
+// auth middleware
+const authMiddleware =
+    (req, res, next) => {
+        try {
+            const authHeader =
+                req.headers.authorization;
 
-        // CHECK TOKEN EXISTS
-        if (!authHeader) {
-            return res.status(401).json({
-                success: false,
-                message: "No token provided"
-            });
+            // validate auth header
+            if (!authHeader) {
+                return res.status(401)
+                    .json({
+                        success: false,
+                        message:
+                            "No token provided"
+                    });
+            }
+
+            // validate bearer format
+            if (
+                !authHeader.startsWith(
+                    "Bearer "
+                )
+            ) {
+
+                return res.status(401)
+                    .json({
+                        success: false,
+                        message:
+                            "Bearer token required"
+                    });
+            }
+
+            // extract token
+            const token =
+                authHeader
+                    .split(" ")[1]
+                    ?.trim();
+
+            if (!token) {
+                return res.status(401)
+                    .json({
+                        success: false,
+                        message:
+                            "Invalid token format"
+                    });
+            }
+
+            // verify token
+            const decoded =
+                jwt.verify(
+                    token,
+                    process.env.JWT_SECRET
+                );
+
+            // validate decoded payload
+            if (
+                !decoded
+                || !decoded.id
+            ) {
+                return res.status(401)
+                    .json({
+                        success: false,
+                        message:
+                            "Invalid token payload"
+                    });
+            }
+
+            // attach user
+            req.user = {
+                id:
+                    Number(decoded.id),
+
+                role:
+                    decoded.role
+                    || "user"
+            };
+            next();
+
+        } catch (error) {
+            console.error(
+                "AUTH ERROR:",
+                error
+            );
+            let message =
+                "Unauthorized access";
+
+            if (
+                error.name
+                === "TokenExpiredError"
+            ) {
+                message =
+                    "Token expired";
+
+            } else if (
+                error.name
+                === "JsonWebTokenError"
+            ) {
+                message =
+                    "Invalid token";
+            }
+
+            return res.status(401)
+                .json({
+                    success: false,
+                    message
+                });
         }
+    };
 
-        // CHECK BEARER FORMAT
-        if (!authHeader.startsWith("Bearer ")) {
-            return res.status(401).json({
-                success: false,
-                message: "Bearer token required"
-            });
-        }
-        const token = authHeader.split(" ")[1];
-        if (!token) {
-            return res.status(401).json({
-                success: false,
-                message: "Invalid token format"
-            });
-        }
-
-        // VERIFY TOKEN
-        const decoded = jwt.verify(
-            token,
-            process.env.JWT_SECRET
-        );
-
-        // ATTACH USER
-        req.user = {
-            id: decoded.id,
-            role: decoded.role
-        };
-        next();
-    } catch (error) {
-        console.error("AUTH ERROR:", error);
-        return res.status(401).json({
-            success: false,
-            message:
-                error.message === "jwt expired"
-                    ? "Token expired"
-                    : "Unauthorized access"
-        });
-    }
-};
-
-module.exports = authMiddleware;
+module.exports =
+    authMiddleware;

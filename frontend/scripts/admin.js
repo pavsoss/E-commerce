@@ -1,27 +1,33 @@
 // ADMIN PANEL INITIALIZED
 // Shared helpers are provided globally from utils.js
+// auth state
+const user =
+    AppUtils.getJSON("user");
 
-const user = getJSON("user");
-const token = localStorage.getItem("token");
+const token =
+    localStorage.getItem(
+        "token"
+    );
 
 if (
     !token ||
     !user ||
     user.role !== "admin"
 ) {
-
-    notify(
+    AppUtils.notify(
         "Admin access required",
         "error"
     );
-
     setTimeout(() => {
         window.location.href =
             "signin.html";
     }, 800);
+    throw new Error(
+        "Unauthorized admin access"
+    );
 }
 
-// ELEMENTS
+// elements
 const elements = {
     productForm:
         document.getElementById(
@@ -94,13 +100,13 @@ const elements = {
         )
 };
 
-// FETCH INITIAL DATA
+// fetch initial data
 let products = [];
 let orders = [];
 
 const loadInitialData = async () => {
     try {
-        if(elements.productTableBody){
+        if (elements.productTableBody) {
             elements.productTableBody.innerHTML =
                 `<tr>
                     <td colspan="6">
@@ -108,21 +114,50 @@ const loadInitialData = async () => {
                     </td>
                 </tr>`;
         }
-        const productsRes = await apiRequest("/products");
-        if (productsRes.success) products = productsRes.products;
+        const productsRes =
+            await AppUtils.apiRequest(
+                "/products"
+            );
+        if (productsRes.success) {
+            products =
+                Array.isArray(
+                    productsRes.products
+                )
+                    ? productsRes.products
+                    : [];
+        }
 
-        const ordersRes = await apiRequest("/orders");
-        if (ordersRes.success) orders = ordersRes.orders;
+        const ordersRes =
+            await AppUtils.apiRequest(
+                "/orders"
+            );
+        if (ordersRes.success) {
+            orders =
+                Array.isArray(
+                    ordersRes.orders
+                )
+                    ? ordersRes.orders
+                    : [];
+        }
 
         renderProducts();
         renderOrders();
         renderStats();
     } catch (error) {
-        console.error("Failed to load initial data", error);
+        if (elements.productTableBody) {
+            elements.productTableBody.innerHTML =
+                `
+                    <tr>
+                        <td colspan="6">
+                            Failed to load products
+                        </td>
+                    </tr>
+                `;
+        }
     }
 };
 
-// RENDER STATS
+// render stars
 function renderStats() {
 
     if (elements.totalOrders) {
@@ -149,7 +184,7 @@ function renderStats() {
                 sum +
                 parseFloat(
                     order.total || 0
-                )
+                ) || 0
             );
 
         },
@@ -162,7 +197,7 @@ function renderStats() {
     }
 }
 
-// ADD PRODUCT
+// add product
 if (elements.productForm) {
     elements.productForm.addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -192,27 +227,38 @@ if (elements.productForm) {
             featured:
                 elements.featuredProduct.checked
         };
-        if(
-            !productData.name.trim() ||
-            !productData.category.trim()
-        ){
-            notify(
-                "Product name and category are required",
+        if (
+            !productData.name.trim()
+            || !productData.category.trim()
+            || productData.price < 0
+            || productData.stock < 0
+        ) {
+            AppUtils.notify(
+                "Enter valid product details",
                 "error"
             );
             return;
         }
         try {
-            const res = await apiRequest("/products", "POST", productData);
+            const res =
+            await AppUtils.apiRequest(
+                "/products",
+                {
+                    method: "POST",
+                    body: JSON.stringify(
+                        productData
+                    )
+                }
+            );
             if (res.success) {
-                notify(
+                AppUtils.notify(
                     "Product added successfully!",
                     "success"
                 );
                 await loadInitialData();
                 elements.productForm.reset();
             } else {
-                notify(
+                AppUtils.notify(
                     res.message ||
                     "Failed to add product",
                     "error"
@@ -220,7 +266,7 @@ if (elements.productForm) {
             }
         } catch (error) {
             console.error(error);
-            notify(
+            AppUtils.notify(
                 "Failed to add product.",
                 "error"
             );
@@ -228,44 +274,129 @@ if (elements.productForm) {
     });
 }
 
-// RENDER PRODUCTS
+// render products
 function renderProducts() {
-    if (!elements.productTableBody) return;
-    elements.productTableBody.innerHTML = "";
+    if (!elements.productTableBody) {
+        return;
+    }
+
+    elements.productTableBody.innerHTML =
+        "";
+    
+    if (!(products || []).length) {
+        elements.productTableBody.innerHTML =
+            `
+                <tr>
+                    <td colspan="6">
+                        No products found
+                    </td>
+                </tr>
+            `;    
+        return;
+    }
 
     (products || []).forEach((product) => {
-        const row = document.createElement("tr");
+        if (!product.id) {
+            return;
+        }
+        if (!product) {
+            return;
+        }
+        const row =
+            document.createElement("tr");
         row.innerHTML = `
-            <td>${product.name}</td>
-            <td>${product.category}</td>
-            <td>₹${product.price}</td>
-            <td>${product.stock}</td>
-            <td>${product.featured ? "Featured" : "—"}</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
             <td>
-                <button class="action-btn" onclick="editProduct(${product.id})">Edit</button>
-                <button class="action-btn delete-btn" onclick="deleteProduct(${product.id})">Delete</button>
+                <button
+                    type="button"
+                    class="action-btn edit-btn"
+                >
+                    Edit
+                </button>
+
+                <button
+                    type="button"
+                    class="action-btn delete-btn"
+                >
+                    Delete
+                </button>
             </td>
         `;
-        elements.productTableBody.appendChild(row);
+
+        row.children[0].innerText =
+            product.name || "Product";
+
+        row.children[1].innerText =
+            product.category || "Category";
+
+        row.children[2].innerText =
+            AppUtils.formatPrice(
+                product.price || 0
+            );
+
+        row.children[3].innerText =
+            String(product.stock || 0);
+
+        row.children[4].innerText =
+            product.featured
+                ? "Featured"
+                : "—";
+
+        row.querySelector(".edit-btn")
+            ?.addEventListener(
+                "click",
+                () => {
+                    editProduct(product.id);
+                }
+            );
+
+        row.querySelector(".delete-btn")
+            ?.addEventListener(
+                "click",
+                () => {
+                    deleteProduct(product.id);
+                }
+            );
+
+        elements.productTableBody
+            .appendChild(row);
     });
 }
 
-// DELETE PRODUCT
+// delete product
 async function deleteProduct(id) {
+    const confirmed =
+        confirm(
+            "Delete this product permanently?"
+        );
+
+    if (!confirmed) {
+        return;
+    }
     try {
-        const res = await apiRequest(`/products/${id}`, "DELETE");
+        const res =
+            await AppUtils.apiRequest(
+                `/products/${id}`,
+                {
+                    method: "DELETE"
+                }
+            );
         if (res.success) {
             products = products.filter(
                 (p) => p.id !== id
             );
             renderProducts();
             renderStats();
-            notify(
+            AppUtils.notify(
                 "Product deleted successfully!",
                 "success"
             );
         } else {
-            notify(
+            AppUtils.notify(
                 res.message ||
                 "Failed to delete product",
                 "error"
@@ -273,26 +404,30 @@ async function deleteProduct(id) {
         }
     } catch (error) {
         console.error(error);
-        notify(
+        AppUtils.notify(
             "Failed to delete product.",
             "error"
         );
     }
 }
 
-// EDIT PRODUCT
+// edit products
 async function editProduct(id) {
     const product = products.find((p) => p.id === id);
-    if (!product) return;
+    if (!product) {
+        return;
+    }
 
     const newName = prompt("Edit Product Name", product.name);
     const newPrice = prompt("Edit Product Price", product.price);
     const newStock = prompt("Edit Product Stock", product.stock);
 
     if (
-        newName?.trim() &&
-        !isNaN(newPrice) &&
-        !isNaN(newStock)
+        newName?.trim()
+        && !isNaN(newPrice)
+        && !isNaN(newStock)
+        && parseFloat(newPrice) >= 0
+        && parseInt(newStock) >= 0
     ) {
         const updatedData = {
             name: newName.trim(),
@@ -309,17 +444,26 @@ async function editProduct(id) {
         };
 
         try {
-            const res = await apiRequest(`/products/${id}`, "PUT", updatedData);
+            const res =
+                await AppUtils.apiRequest(
+                    `/products/${id}`,
+                    {
+                        method: "PUT",
+                        body: JSON.stringify(
+                            updatedData
+                        )
+                    }
+                );
             if (res.success) {
                 Object.assign(product, updatedData);
                 renderProducts();
                 renderStats();
-                notify(
+                AppUtils.notify(
                     "Product updated successfully!",
                     "success"
                 );
             } else {
-                notify(
+                AppUtils.notify(
                     res.message ||
                     "Failed to update product",
                     "error"
@@ -327,7 +471,7 @@ async function editProduct(id) {
             }
         } catch (error) {
             console.error(error);
-            notify(
+            AppUtils.notify(
                 "Failed to update product.",
                 "error"
             );
@@ -335,22 +479,45 @@ async function editProduct(id) {
     }
 }
 
-// RENDER ORDERS
+// render orders
 function renderOrders() {
     if (!elements.ordersTableBody) return;
     elements.ordersTableBody.innerHTML = "";
+    if (!(orders || []).length) {
+        elements.ordersTableBody.innerHTML =
+            `
+                <tr>
+                    <td colspan="3">
+                        No orders found
+                    </td>
+                </tr>
+            `;    
+        return;
+    }
     (orders || []).forEach((order) => {
+        if (!order) {
+            return;
+        }
         const row = document.createElement("tr");
         row.innerHTML = `
-            <td>${order.id}</td>
-            <td>${order.date}</td>
-            <td>₹${parseFloat(
-                order.total || 0
-            ).toFixed(2)}</td>
+            <td></td>
+            <td></td>
+            <td></td>
         `;
+
+        row.children[0].innerText =
+            String(order.id || "-");
+
+        row.children[1].innerText =
+            order.date || "-";
+
+        row.children[2].innerText =
+            AppUtils.formatPrice(
+                order.total || 0
+            );
         elements.ordersTableBody.appendChild(row);
     });
 }
 
-// INITIALIZE
+// initialize
 loadInitialData();

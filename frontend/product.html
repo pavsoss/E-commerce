@@ -1,217 +1,411 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
     <meta charset="UTF-8">
+
     <meta
         name="viewport"
         content="width=device-width, initial-scale=1.0"
     >
-    <title>Product Details | AnthropicBots E-Commerce</title>
 
-    <link rel="stylesheet" href="styles/style.css">
-    <link rel="stylesheet" href="styles/product.css">
+    <!-- SEO -->
+
+    <meta
+        name="description"
+        content="Explore premium fashion products with detailed descriptions, ratings, reviews, variants, and secure shopping experience."
+    >
+
+    <meta
+        name="keywords"
+        content="fashion, ecommerce, clothing, product details, shopping"
+    >
+
+    <meta
+        name="author"
+        content="AnthropicBots E-Commerce"
+    >
+
+    <title>
+        Product Details | AnthropicBots E-Commerce
+    </title>
+
+    <!-- Favicon -->
+
+    <link
+        rel="icon"
+        type="image/png"
+        href="assets/images/logo.png"
+    >
+
+    <!-- Styles -->
+
+    <link
+        rel="stylesheet"
+        href="styles/base.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="styles/layout.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="styles/components.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="styles/hero.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="styles/product-card.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="styles/style.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="styles/product.css"
+    >
+
+    <!-- Icons -->
+
     <link
         rel="stylesheet"
         href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css"
     >
+
 </head>
 
 <body>
+
+    <!-- Navbar -->
+
     <div id="navbar"></div>
 
     <!-- Product Details -->
-    <section id="product-details" class="section-p1">
+
+    <section
+        id="product-details"
+        class="section-p1"
+    >
+
         <!-- Product Images -->
+
         <div class="single-product-image">
-            <img src="" width="100%" id="main-product-image" alt="Product">
+
+            <img
+                src=""
+                width="100%"
+                id="main-product-image"
+                alt="Product"
+                loading="lazy"
+            >
+
             <div class="small-image-group">
+
                 <div class="small-image-col">
-                    <img src="" class="small-image" alt="">
+
+                    <img
+                        src=""
+                        class="small-image"
+                        alt="Product Thumbnail"
+                        loading="lazy"
+                    >
+
                 </div>
+
                 <div class="small-image-col">
-                    <img src="" class="small-image" alt="">
+
+                    <img
+                        src=""
+                        class="small-image"
+                        alt="Product Thumbnail"
+                        loading="lazy"
+                    >
+
                 </div>
+
                 <div class="small-image-col">
-                    <img src="" class="small-image" alt="">
+
+                    <img
+                        src=""
+                        class="small-image"
+                        alt="Product Thumbnail"
+                        loading="lazy"
+                    >
+
                 </div>
+
                 <div class="small-image-col">
-                    <img src="" class="small-image" alt="">
+
+                    <img
+                        src=""
+                        class="small-image"
+                        alt="Product Thumbnail"
+                        loading="lazy"
+                    >
+
                 </div>
+
             </div>
+
         </div>
 
+        <!-- Product Info -->
+
         <div class="single-product-details">
+
             <h6 id="product-category">
-                Home / Fashion / Product            
-            </h6>        
+
+                Home / Fashion / Product
+
+            </h6>
+
             <h2 id="product-name">
+
                 Product Name
+
             </h2>
 
-            <!-- BRAND + RATING -->
+            <!-- Meta -->
+
             <div class="product-top-meta">
+
                 <span class="brand-badge">
+
                     <i class="fas fa-award"></i>
+
                     <span id="product-brand">
+
                         Brand
+
                     </span>
+
                 </span>
+
                 <span class="rating-badge product-rating">
+
                     <i class="fas fa-star"></i>
+
                     <span id="product-rating-text">
+
                         4.5 Ratings
+
                     </span>
+
                 </span>
+
             </div>
 
-            <!-- PRICE -->
+            <!-- Price -->
+
             <div class="price-wrapper">
-                <h2 id="product-price">                
+
+                <h2 id="product-price">
+
                     ₹0
-                </h2>            
-                <span class="original-price">                
+
+                </h2>
+
+                <span
+                    class="original-price"
+                    id="product-original-price"
+                >
+
                     ₹1999
+
                 </span>
-                <span class="discount-percent">
+
+                <span
+                    class="discount-percent"
+                    id="product-discount"
+                >
+
                     50% OFF
+
                 </span>
-            </div>
-        
-            <!-- STOCK -->
-            <div class="stock-wrapper">
-                <span class="stock-title">
-                    Availability :
-                </span>
-                <span id="product-stock">
-                    In Stock
-                </span>
+
             </div>
 
-            <!-- SHORT DESCRIPTION -->
+            <!-- Stock -->
+
+            <div class="stock-wrapper">
+
+                <span class="stock-title">
+
+                    Availability :
+
+                </span>
+
+                <span id="product-stock">
+
+                    In Stock
+
+                </span>
+
+            </div>
+
+            <!-- Short Description -->
+
             <p class="short-description">
+
                 Premium quality fashion product with modern design,
                 comfortable fabric, and stylish finishing for everyday wear.
+
             </p>
-        
-            <!-- SIZE VARIANTS -->
+
+            <!-- Size Variants -->
+
             <div class="variant-section">
-            
+
                 <h4>
-                
+
                     Select Size
-                
+
                 </h4>
-            
+
                 <div class="size-options">
-                
+
                     <button
                         class="size-btn active-size"
                         data-size="M"
                     >
                         M
                     </button>
-                
+
                     <button
                         class="size-btn"
                         data-size="L"
                     >
                         L
                     </button>
-                
+
                     <button
                         class="size-btn"
                         data-size="XL"
                     >
                         XL
                     </button>
-                
+
                     <button
                         class="size-btn"
                         data-size="XXL"
                     >
                         XXL
                     </button>
-                
+
                 </div>
-            
+
             </div>
-        
-            <!-- SIZE CHART -->
-        
+
+            <!-- Size Chart -->
+
             <div class="size-chart-box">
-            
+
                 <h4>
-                
+
                     Size Chart
-                
+
                 </h4>
-            
+
                 <table class="size-chart-table">
-                
+
                     <tr>
+
                         <th>Size</th>
+
                         <th>Chest</th>
+
                         <th>Length</th>
+
                     </tr>
-                
+
                     <tr>
+
                         <td>M</td>
+
                         <td>38</td>
+
                         <td>27</td>
+
                     </tr>
-                
+
                     <tr>
+
                         <td>L</td>
+
                         <td>40</td>
+
                         <td>28</td>
+
                     </tr>
-                
+
                     <tr>
+
                         <td>XL</td>
+
                         <td>42</td>
+
                         <td>29</td>
+
                     </tr>
-                
+
                     <tr>
+
                         <td>XXL</td>
+
                         <td>44</td>
+
                         <td>30</td>
+
                     </tr>
-                
+
                 </table>
-            
+
             </div>
-        
-            <!-- COLOR VARIANTS -->
-        
+
+            <!-- Color Variants -->
+
             <div class="variant-section">
-            
+
                 <h4>
-                
+
                     Select Color
-                
+
                 </h4>
-            
+
                 <div class="color-options">
-                
+
                     <button
                         class="color-btn active-color"
                         data-color="Black"
                         style="background:black;"
+                        aria-label="Black Color"
                     ></button>
-                
+
                     <button
                         class="color-btn"
                         data-color="Blue"
                         style="background:blue;"
+                        aria-label="Blue Color"
                     ></button>
-                
+
                     <button
                         class="color-btn"
                         data-color="Red"
                         style="background:red;"
+                        aria-label="Red Color"
                     ></button>
-                
+
                     <button
                         class="color-btn"
                         data-color="White"
@@ -219,147 +413,209 @@
                             background:white;
                             border:1px solid #ccc;
                         "
+                        aria-label="White Color"
                     ></button>
-                
+
                 </div>
-            
+
             </div>
-        
-            <!-- STOCK -->
-        
+
+            <!-- Variant Stock -->
+
             <div class="variant-stock-box">
-            
+
                 <i class="fas fa-box-open"></i>
-            
+
                 Available Stock :
-            
+
                 <span id="variant-stock">
-                
+
                     12
-                
+
                 </span>
-            
+
             </div>
-        
-            <!-- QUANTITY -->
-        
+
+            <!-- Quantity -->
+
             <div class="quantity-wrapper">
-            
+
                 <h4>
-                
+
                     Quantity
-                
+
                 </h4>
-            
+
                 <div class="quantity-box">
-                
+
                     <button id="minus-btn">
-                    
+
                         -
-                    
+
                     </button>
-                
+
                     <input
                         type="number"
                         id="product-qty"
                         value="1"
                         min="1"
                     >
-                
+
                     <button id="plus-btn">
-                    
+
                         +
-                    
+
                     </button>
-                
+
                 </div>
-            
+
             </div>
-        
-            <!-- ACTION BUTTONS -->
-        
+
+            <!-- Buttons -->
+
             <div class="product-buttons">
-            
+
                 <button id="add-to-cart-btn">
-                
+
                     <i class="fas fa-shopping-cart"></i>
-                
+
                     Add To Cart
-                
+
                 </button>
-            
+
                 <button id="buy-now-btn">
-                
+
                     <i class="fas fa-bolt"></i>
-                
+
                     Buy Now
-                
+
                 </button>
-            
+
                 <button id="wishlist-btn">
-                
+
                     <i class="fas fa-heart"></i>
-                
+
                     Wishlist
-                
+
                 </button>
-            
+
             </div>
-        
-            <!-- DELIVERY -->
+
+            <!-- Delivery -->
+
             <div class="delivery-box">
+
                 <div class="delivery-item">
+
                     <i class="fas fa-truck"></i>
+
                     Free Delivery Available
+
                 </div>
+
                 <div class="delivery-item">
+
                     <i class="fas fa-undo"></i>
+
                     7 Days Easy Return
+
                 </div>
+
                 <div class="delivery-item">
-                    <i class="fas fa-shield-alt"></i>                
-                    100% Original Product                
-                </div>            
+
+                    <i class="fas fa-shield-alt"></i>
+
+                    100% Original Product
+
+                </div>
+
             </div>
-        
-            <!-- PRODUCT DESCRIPTION -->        
-            <div class="product-description-box">            
-                <h4>                
-                    Product Details                
-                </h4>            
-                <span id="product-description">                
+
+            <!-- Description -->
+
+            <div class="product-description-box">
+
+                <h4>
+
+                    Product Details
+
+                </h4>
+
+                <span id="product-description">
+
                     Product Description
+
                 </span>
+
             </div>
+
         </div>
+
     </section>
 
     <!-- Related Products -->
-    <section id="related-products" class="section-p1">
-        <h2>Related Products</h2>
-        <p>You may also like</p>
-        <div
-            class="pro-container"
-            id="related-products-container"
-        ></div>
-    </section>
 
-    <!-- Recommended Products -->
-    <section id="recommended-products" class="section-p1">
-        <h2>Recommended For You</h2>
-        <p>Smart recommendations based on your interests</p>
-        <div
-            class="pro-container"
-            id="recommended-products-container"
-        ></div>
-    </section>
-
-    <!-- Reviews Section -->
-
-    <section id="reviews" class="section-p1">
+    <section
+        id="related-products-section"
+        class="section-p1"
+    >
 
         <h2>
+
+            Related Products
+
+        </h2>
+
+        <p>
+
+            You may also like
+
+        </p>
+
+        <div
+            class="pro-container"
+            id="related-products"
+        ></div>
+
+    </section>
+
+    <!-- Recommended -->
+
+    <section
+        id="recommended-products"
+        class="section-p1"
+    >
+
+        <h2>
+
+            Recommended For You
+
+        </h2>
+
+        <p>
+
+            Smart recommendations based on your interests
+
+        </p>
+
+        <div
+            class="pro-container"
+            id="recently-viewed-products"
+        ></div>
+
+    </section>
+
+    <!-- Reviews -->
+
+    <section
+        id="reviews"
+        class="section-p1"
+    >
+
+        <h2>
+
             Customer Reviews
+
         </h2>
 
         <form id="review-form">
@@ -403,7 +659,7 @@
             </select>
 
             <textarea
-                id="review-comment"
+                id="review-message"
                 placeholder="Write your review..."
                 required
             ></textarea>
@@ -418,19 +674,71 @@
 
         <div
             class="review-container"
-            id="review-container"
+            id="reviews-container"
         ></div>
 
     </section>
 
+    <!-- Footer -->
     <div id="footer"></div>
 
-    <!-- Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-    <script src="scripts/components.js"></script>
-    <script src="scripts/auth.js"></script>
-    <script src="scripts/product.js"></script>
+    <!-- Core Scripts -->
+    <script
+        defer
+        src="scripts/config.js"
+    ></script>
+
+    <script
+        defer
+        src="scripts/toast.js"
+    ></script>
+
+    <script
+        defer
+        src="scripts/utils.js"
+    ></script>
+
+    <script
+        defer
+        src="scripts/components.js"
+    ></script>
+
+    <script
+        defer
+        src="scripts/auth.js"
+    ></script>
+
+    <!-- Product Modules -->
+    <script
+        defer
+        src="scripts/product-render.js"
+    ></script>
+
+    <script
+        defer
+        src="scripts/product-variants.js"
+    ></script>
+
+    <script
+        defer
+        src="scripts/product-actions.js"
+    ></script>
+
+    <script
+        defer
+        src="scripts/product-reviews.js"
+    ></script>
+
+    <script
+        defer
+        src="scripts/related-products.js"
+    ></script>
+
+    <!-- Main Bootstrap -->
+    <script
+        defer
+        src="scripts/product.js"
+    ></script>
 
 </body>
 </html>
