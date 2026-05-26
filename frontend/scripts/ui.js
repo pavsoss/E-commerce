@@ -15,7 +15,7 @@ function initializeMobileNavbar() {
     bar.addEventListener("click", (e) => {
         navLinks.classList.add("active");
         console.log("active")
-        e.stopPropagation();
+        e.stopPropagation();    //
     });
 
     // 2. Cross Button Click 
