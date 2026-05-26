@@ -106,7 +106,7 @@ const getProducts = async (req, res) => {
 
         // promise pool
         const promiseDb =
-            db.promise;
+            db.promise();
 
         // get total count
         const [
