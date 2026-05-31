@@ -22,7 +22,7 @@ requiredEnvVars.forEach(
     ) => {
 
         if (
-            !process.env[key]
+            process.env[key] === undefined
         ) {
 
             console.error(
@@ -193,10 +193,10 @@ pool.on(
     }
 );
 
-// export promise pool
+promisePool.promise = promisePool;
+
 module.exports =
     promisePool;
 
-// optional raw pool access
 module.exports.rawPool =
     pool;

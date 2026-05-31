@@ -44,13 +44,25 @@ function renderBlogPosts() {
     blogGrid.innerHTML = "";
 
     if (filteredPosts.length === 0) {
-        blogGrid.innerHTML = `
-            <div class="no-results">
-                <i class="far fa-frown"></i>
-                <p>No articles found matching your criteria.</p>
-                <button onclick="resetFilters()">Reset Filters</button>
-            </div>
-        `;
+        const noResults = document.createElement("div");
+        noResults.className = "no-results";
+        
+        const frownIcon = document.createElement("i");
+        frownIcon.className = "far fa-frown";
+        
+        const message = document.createElement("p");
+        message.textContent = "No articles found matching your criteria.";
+        
+        const resetBtn = document.createElement("button");
+        resetBtn.textContent = "Reset Filters";
+        resetBtn.addEventListener("click", () => {
+            if (window.resetFilters) window.resetFilters();
+        });
+        
+        noResults.appendChild(frownIcon);
+        noResults.appendChild(message);
+        noResults.appendChild(resetBtn);
+        blogGrid.appendChild(noResults);
         return;
     }
 
@@ -60,34 +72,77 @@ function renderBlogPosts() {
         card.className = "blog-card";
         card.setAttribute("data-id", post.id);
 
-        card.innerHTML = `
-            <div class="blog-img">
-                <img src="${post.image}" alt="${post.title}" loading="lazy">
-                <span class="blog-date">${post.date}</span>
-            </div>
-            <div class="blog-details">
-                <div class="blog-meta">
-                    <span class="category-tag ${post.category}">${post.category}</span>
-                    <span class="read-time"><i class="far fa-clock"></i> ${post.readTime}</span>
-                </div>
-                <h4>${post.title}</h4>
-                <p>${post.excerpt}</p>
-                <a href="javascript:void(0)" class="read-more-btn" data-id="${post.id}">
-                    CONTINUE READING <i class="fas fa-arrow-right"></i>
-                </a>
-            </div>
-        `;
+        const imgDiv = document.createElement("div");
+        imgDiv.className = "blog-img";
+        
+        const img = document.createElement("img");
+        img.src = post.image;
+        img.alt = post.title;
+        img.loading = "lazy";
+        
+        const dateSpan = document.createElement("span");
+        dateSpan.className = "blog-date";
+        dateSpan.textContent = post.date;
+        
+        imgDiv.appendChild(img);
+        imgDiv.appendChild(dateSpan);
+
+        const detailsDiv = document.createElement("div");
+        detailsDiv.className = "blog-details";
+
+        const metaDiv = document.createElement("div");
+        metaDiv.className = "blog-meta";
+        
+        const categorySpan = document.createElement("span");
+        categorySpan.className = `category-tag ${post.category}`;
+        categorySpan.textContent = post.category;
+        
+        const readTimeSpan = document.createElement("span");
+        readTimeSpan.className = "read-time";
+        
+        const clockIcon = document.createElement("i");
+        clockIcon.className = "far fa-clock";
+        readTimeSpan.appendChild(clockIcon);
+        readTimeSpan.appendChild(document.createTextNode(` ${post.readTime}`));
+        
+        metaDiv.appendChild(categorySpan);
+        metaDiv.appendChild(readTimeSpan);
+
+        const titleH4 = document.createElement("h4");
+        titleH4.textContent = post.title;
+
+        const excerptP = document.createElement("p");
+        excerptP.textContent = post.excerpt;
+
+        const readMoreBtn = document.createElement("button");
+        readMoreBtn.className = "read-more-btn";
+        readMoreBtn.setAttribute("data-id", post.id);
+        readMoreBtn.setAttribute("aria-label", `Continue reading ${post.title}`);
+        readMoreBtn.appendChild(document.createTextNode("CONTINUE READING "));
+        
+        const arrowIcon = document.createElement("i");
+        arrowIcon.className = "fas fa-arrow-right";
+        readMoreBtn.appendChild(arrowIcon);
+        
+        readMoreBtn.addEventListener("click", () => {
+            openArticleModal(post.id);
+        });
+
+        detailsDiv.appendChild(metaDiv);
+        detailsDiv.appendChild(titleH4);
+        detailsDiv.appendChild(excerptP);
+        detailsDiv.appendChild(readMoreBtn);
+
+        card.appendChild(imgDiv);
+        card.appendChild(detailsDiv);
         blogGrid.appendChild(card);
     });
-
-  
-    bindReadMoreButtons();
 }
 
-function bindReadMoreButtons() {
+function bindStaticReadMoreButtons() {
     const buttons = document.querySelectorAll(".read-more-btn");
     buttons.forEach(btn => {
-        btn.addEventListener("click", (e) => {
+        btn.addEventListener("click", () => {
             const postId = parseInt(btn.getAttribute("data-id"));
             openArticleModal(postId);
         });
@@ -98,45 +153,125 @@ function openArticleModal(id) {
     const post = BLOG_POSTS.find(p => p.id === id);
     if (!post) return;
 
-    blogModalBody.innerHTML = `
-        <img class="modal-hero-img" src="${post.image}" alt="${post.title}">
-        <div class="modal-meta">
-            <span class="category-tag ${post.category}">${post.category}</span>
-            <span>•</span>
-            <span>${post.date}</span>
-            <span>•</span>
-            <span><i class="far fa-clock"></i> ${post.readTime}</span>
-        </div>
-        <h2 class="modal-title">${post.title}</h2>
-        <div class="modal-author-info">
-            <img class="author-avatar" src="${post.authorAvatar}" alt="${post.author}">
-            <div class="author-details">
-                <span class="author-name">${post.author}</span>
-                <span class="author-title">${post.authorTitle}</span>
-            </div>
-        </div>
-        <div class="modal-text">
-            ${post.content}
-        </div>
-        <div class="modal-share">
-            <span>Share Article:</span>
-            <button class="share-btn" onclick="shareArticle('twitter', '${encodeURIComponent(post.title)}')" aria-label="Share on Twitter">
-                <i class="fab fa-twitter"></i>
-            </button>
-            <button class="share-btn" onclick="shareArticle('facebook', '${encodeURIComponent(post.title)}')" aria-label="Share on Facebook">
-                <i class="fab fa-facebook-f"></i>
-            </button>
-            <button class="share-btn" onclick="shareArticle('linkedin', '${encodeURIComponent(post.title)}')" aria-label="Share on Linkedin">
-                <i class="fab fa-linkedin-in"></i>
-            </button>
-            <button class="share-btn" onclick="copyLink()" aria-label="Copy article link">
-                <i class="fas fa-link"></i>
-            </button>
-        </div>
-    `;
+    blogModalBody.innerHTML = "";
+
+    const heroImg = document.createElement("img");
+    heroImg.className = "modal-hero-img";
+    heroImg.src = post.image;
+    heroImg.alt = post.title;
+    blogModalBody.appendChild(heroImg);
+
+    const metaDiv = document.createElement("div");
+    metaDiv.className = "modal-meta";
+    
+    const categorySpan = document.createElement("span");
+    categorySpan.className = `category-tag ${post.category}`;
+    categorySpan.textContent = post.category;
+    
+    const dotSpan1 = document.createElement("span");
+    dotSpan1.textContent = "•";
+    
+    const dateSpan = document.createElement("span");
+    dateSpan.textContent = post.date;
+    
+    const dotSpan2 = document.createElement("span");
+    dotSpan2.textContent = "•";
+    
+    const readTimeSpan = document.createElement("span");
+    const clockIcon = document.createElement("i");
+    clockIcon.className = "far fa-clock";
+    readTimeSpan.appendChild(clockIcon);
+    readTimeSpan.appendChild(document.createTextNode(` ${post.readTime}`));
+    
+    metaDiv.appendChild(categorySpan);
+    metaDiv.appendChild(dotSpan1);
+    metaDiv.appendChild(dateSpan);
+    metaDiv.appendChild(dotSpan2);
+    metaDiv.appendChild(readTimeSpan);
+    blogModalBody.appendChild(metaDiv);
+
+    const titleH2 = document.createElement("h2");
+    titleH2.className = "modal-title";
+    titleH2.textContent = post.title;
+    blogModalBody.appendChild(titleH2);
+
+    const authorDiv = document.createElement("div");
+    authorDiv.className = "modal-author-info";
+    
+    const avatarImg = document.createElement("img");
+    avatarImg.className = "author-avatar";
+    avatarImg.src = post.authorAvatar;
+    avatarImg.alt = post.author;
+    
+    const authorDetails = document.createElement("div");
+    authorDetails.className = "author-details";
+    
+    const authorName = document.createElement("span");
+    authorName.className = "author-name";
+    authorName.textContent = post.author;
+    
+    const authorTitle = document.createElement("span");
+    authorTitle.className = "author-title";
+    authorTitle.textContent = post.authorTitle;
+    
+    authorDetails.appendChild(authorName);
+    authorDetails.appendChild(authorTitle);
+    
+    authorDiv.appendChild(avatarImg);
+    authorDiv.appendChild(authorDetails);
+    blogModalBody.appendChild(authorDiv);
+
+    const textDiv = document.createElement("div");
+    textDiv.className = "modal-text";
+    textDiv.innerHTML = post.content; // Content contains safe rich HTML markup from the blog posts
+    blogModalBody.appendChild(textDiv);
+
+    const shareDiv = document.createElement("div");
+    shareDiv.className = "modal-share";
+    
+    const shareSpan = document.createElement("span");
+    shareSpan.textContent = "Share Article:";
+    shareDiv.appendChild(shareSpan);
+
+    const sharePlatforms = [
+        { name: "twitter", class: "fab fa-twitter", label: "Share on Twitter" },
+        { name: "facebook", class: "fab fa-facebook-f", label: "Share on Facebook" },
+        { name: "linkedin", class: "fab fa-linkedin-in", label: "Share on Linkedin" }
+    ];
+
+    sharePlatforms.forEach(platform => {
+        const btn = document.createElement("button");
+        btn.className = "share-btn";
+        btn.setAttribute("aria-label", platform.label);
+        const icon = document.createElement("i");
+        icon.className = platform.class;
+        btn.appendChild(icon);
+        
+        btn.addEventListener("click", () => {
+            if (window.shareArticle) {
+                window.shareArticle(platform.name, post.title);
+            }
+        });
+        shareDiv.appendChild(btn);
+    });
+
+    const copyBtn = document.createElement("button");
+    copyBtn.className = "share-btn";
+    copyBtn.setAttribute("aria-label", "Copy article link");
+    const linkIcon = document.createElement("i");
+    linkIcon.className = "fas fa-link";
+    copyBtn.appendChild(linkIcon);
+    copyBtn.addEventListener("click", () => {
+        if (window.copyLink) {
+            window.copyLink();
+        }
+    });
+    shareDiv.appendChild(copyBtn);
+
+    blogModalBody.appendChild(shareDiv);
 
     blogModal.classList.add("active");
-    document.body.style.overflow = "hidden"; 
+    document.body.style.overflow = "hidden";
 }
 
 // CLOSE MODAL
@@ -190,6 +325,7 @@ window.copyLink = function() {
 
 document.addEventListener("DOMContentLoaded", () => {
     initBlog();
+    bindStaticReadMoreButtons();
 
     categoryButtons.forEach(btn => {
         btn.addEventListener("click", () => {
