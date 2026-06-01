@@ -179,9 +179,3 @@ ON order_items(order_id);
 
 CREATE INDEX idx_order_items_product
 ON order_items(product_id);
-
-CREATE TABLE IF NOT EXISTS newsletter_subscriptions (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    email VARCHAR(255) NOT NULL UNIQUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);

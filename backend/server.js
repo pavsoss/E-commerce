@@ -36,7 +36,7 @@ requiredEnv.forEach(
     ) => {
 
         if (
-            process.env[key] === undefined
+            !process.env[key]
         ) {
 
             console.error(
