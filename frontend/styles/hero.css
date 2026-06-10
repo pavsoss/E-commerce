@@ -469,11 +469,11 @@ body.dark-theme #banner3 h2 {
   color: #ffffff;
 }
 /* Hero background overlay for dark mode */
+/* Hero background overlay for dark mode */
 body.dark-theme #hero {
-    background-color: #121212;
-    background-blend-mode: multiply;
+    background-color: rgba(0, 0, 0, 0.45); /* halka overlay */
+    background-blend-mode: darken; /* multiply ki jagah darken */
 }
-
 /* Product cards white background fix */
 body.dark-theme .products-grid .pro,
 body.dark-theme .products-grid > div,
